@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "*.cjson": "jsonc",
+        "*.wxss": "css",
+        "*.wxs": "javascript",
+        "global.h": "c",
+        "tcp_client.h": "c",
+        "init.h": "c"
+    }
+}
