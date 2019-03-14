@@ -10,6 +10,9 @@
 #include "global.h"
 
 
+int  udp_server_init(int port);
+void pad_data_deal(int fd);
+void slave_data_deal(int fd);
 void *udp_server_handler(void *arg);
 
 #endif

@@ -6,6 +6,32 @@
 #include <stdlib.h>
 #include <pthread.h>
 
+/*协议命令类型*/
+#define ORDER_GATEWAY_STATUS       0x41   //网关->PAD   状态命令
+#define ORDER_PAD_HEARTBEAT        0x42   //PAD ->网关  心跳包命令
+#define ORDER_PAD_BINDING          0x43   //PAD<->网关  绑定命令
+#define ORDER_PAD_VERIFY_BINGDING  0x44	  //PAD ->网关  确认绑定命令
+#define ORDER_PAD_CONFIGID         0x47	  //PAD<->网关  配置编号命令
+#define ORDER_PAD_RESET            0x46   //PAD<->网关  重启命令
+#define ORDER_PAD_STOP             0x25   //PAD<->网关  结束上课命令
+
+#define ORDER_TYPE_UPLOAD          0x82   //上传命令
+#define ORDER_TYPE_INTERRUPT       0x83   //中断上传命令
+
+/*协议命令长度*/
+#define LEN_ACKPAD            20   //网关应答Pad数据长度
+#define LEN_ACKPAD_BINDING    22   //协议-应答数组
+#define LEN_STATUS            133  //网关状态信息数组长度
+
+
+#define LEN_INTERRUPT         70   //协议-中断上传数组长度
+#define LEN_UPLOADDATA        960  //每次上传原始数据长度
+#define LEN_UPLOAD_SUM        1024
+
+
+#define FLASHSAVE_LEN         119  //flash存储空间的大小
+#define GATEWAY_ID 			  100000001 //网关ID
+
 #define DEBUG  1
 typedef unsigned char uchar;
 typedef unsigned int  uint;
