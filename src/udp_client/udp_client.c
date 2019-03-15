@@ -1,7 +1,7 @@
 /**
  * @file udp_client.c
  * @author kly
- * @brief
+ * @brief UDP客户端
  * @version 0.1
  * @date 2019-03-13
  * @copyright Copyright (c) 2018 kuaikuaikeji.Co.Ltd. All rights reserved

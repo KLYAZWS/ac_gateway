@@ -1,3 +1,14 @@
+/**
+ * @file udp_client.c
+ * @author kly
+ * @brief 消息队列
+ * @version 0.1
+ * @date 2019-03-13
+ * @copyright Copyright (c) 2018 kuaikuaikeji.Co.Ltd. All rights reserved
+ *                  修改记录
+ * 0.1        kly        2019-03-13      创建文件
+ *
+ */
 #include "msg.h"
 #include <sys/ipc.h>
 #include <sys/msg.h>
