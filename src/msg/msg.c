@@ -11,7 +11,7 @@ int msg_init(void)
     key = ftok("/app",'m');
     if(key < 0)
     {
-        perror("ftok");
+        DEBUG_ERR("ftok");
         exit(1);
     }
     msg_id = msgget(key,IPC_CREAT|IPC_EXCL|0777);
@@ -23,7 +23,7 @@ int msg_init(void)
         }
         else
         {
-            perror("msgget");
+            DEBUG_ERR("msgget");
             exit(1);
         }
     }

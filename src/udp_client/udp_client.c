@@ -35,20 +35,20 @@
     udp_client_fd = socket(PF_INET,SOCK_DGRAM,0);
     if(udp_client_fd < 0)
     {
-        perror("udp client socket err!\n");
+        DEBUG_ERR("udp client socket err!\n");
     }
 
     ret = setsockopt(udp_client_fd,SOL_SOCKET,SO_BROADCAST,&on,sizeof(on));
     if(ret!=0)
     {
-        printf("setsockopt SO_BROADCAST error:%d, %s\n", errno, strerror(errno));
+        DEBUG_INFO("setsockopt SO_BROADCAST error:%d, %s\n", errno, strerror(errno));
         close(udp_client_fd);
     }
 
     ret = setsockopt(udp_client_fd,SOL_SOCKET,SO_REUSEADDR,&on,sizeof(on));
     if(ret!=0)
     {
-        printf("setsockopt SO_REUSEADDR error:%d, %s\n", errno, strerror(errno));
+        DEBUG_INFO("setsockopt SO_REUSEADDR error:%d, %s\n", errno, strerror(errno));
         close(udp_client_fd);
     }
     return udp_client_fd;
@@ -73,7 +73,7 @@ void *udp_client_handler(void *arg)
         int ret = sendto(send_pad_fd,buf,sizeof(buf),0,(struct sockaddr*)&sockaddr,sizeof(sockaddr));
         if(ret < 0)
         {
-           perror("udp sendto err\n");
+           DEBUG_ERR("udp sendto err\n");
         }
         sleep(3);
     }

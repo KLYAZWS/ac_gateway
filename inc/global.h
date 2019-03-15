@@ -5,6 +5,7 @@
 #include <strings.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <errno.h>
 
 /*协议命令类型*/
 #define ORDER_GATEWAY_STATUS       0x41   //网关->PAD   状态命令
@@ -32,7 +33,9 @@
 #define FLASHSAVE_LEN         119  //flash存储空间的大小
 #define GATEWAY_ID 			  100000001 //网关ID
 
-#define DEBUG  1
+#define NUM_KNEE              36   //膝带数量
+#define UP_DATA_NUM           960  //存储数据
+
 typedef unsigned char uchar;
 typedef unsigned int  uint;
 
@@ -42,21 +45,19 @@ struct pthread
     pthread_t thread_tcp_client;    //tcp客户端，和云服务器通讯
     pthread_t thread_udp_server;    //udp服务器，pad通讯
     pthread_t thread_udp_client;    //udp客户端，pad通讯
-    pthread_t thread_recv_ap;       //接收ap数据
-    pthread_t thread_analysis;      //数据处理线程
-
+    // pthread_t thread_recv_ap;       //接收ap数据
+    // pthread_t thread_analysis;      //数据处理线程
 };
-
  /*存储单个膝带节点数据*/
  typedef struct
  {
-     uchar class_ID[8];
-     uchar user_ID[4];
-     uchar locat_flag; //位置标识
-     uchar device_ID[4];
-     uchar node_num;   //节点号
-     uchar element;    //单元数
-     uchar UTC[4];     //UTC时间戳
+    uchar classID[8];
+    uchar userID[4];
+    uchar locaFlag;   //位置标识
+    uchar deviceID[4];
+    uchar node_mark;     //节点号
+    uchar sla_data[2][UP_DATA_NUM+1]; //数据存储
+    uchar fill_flag[2];     //写入标识
  }knee_typedef;
 
  /* 时间戳 */
@@ -71,11 +72,37 @@ struct pthread
     uchar  unit6EndTime[4];
 }timestamp_typedef;
 
+/*所有信息*/
 typedef struct 
 {
-    knee_typedef knee;
+    knee_typedef kneeData[NUM_KNEE];
     timestamp_typedef timestamp;
-}all_info;
+}all_info_typedef;
+
+/* PAD下发数据 */
+typedef struct 
+{ 
+    uchar classID[8]; //课程ID
+	uchar userID[4];  //用户ID
+    uchar locaFlag;   //位置标识
+	uchar deviceID[4];//设备ID
+    uchar node_mark;     //节点号
+    uchar gateway_ID[4];
+    uchar element;      //单元数
+    uchar UTC[4];       //时间戳
+}pad_data_typedef;
+
+#define USE_DEBUG
+
+#ifdef USE_DEBUG
+#define DEBUG_LINE() printf("[%s:%s] line=%d\r\n",__FILE__, __func__, __LINE__)
+#define DEBUG_ERR(fmt, args...) printf("\033[46;31m[%s:%d]\033[0m "#fmt" errno=%d, %m\r\n", __func__, __LINE__, ##args, errno, errno)
+#define DEBUG_INFO(fmt, args...) printf("\033[33m[%s:%d]\033[0m "#fmt"\r\n", __func__, __LINE__, ##args)
+#else
+#define DEBUG_LINE()
+#define DEBUG_ERR(fmt,...)
+#define DEBUG(fmt,...) 
+#endif
 
 #endif
 

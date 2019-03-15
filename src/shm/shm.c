@@ -5,14 +5,15 @@
 #include <string.h>
 #include "global.h"
 
-struct all_info *shm_init(void)
+static struct all_info* all_info;
+
+void shm_init(void)
 {
     key_t key;
     int shmid;
-    all_info *shm_buf;
     if((key = ftok("/app",'s')) < 0)
     {
-        perror("ftok");
+        DEBUG_ERR("ftok");
         exit(1);
     }
     if((shmid = shmget(key,sizeof(struct all_info),IPC_CREAT|IPC_EXCL|0666)) == -1)
@@ -23,16 +24,18 @@ struct all_info *shm_init(void)
         }
         else
         {
-            perror("shmget");
+            DEBUG_ERR("shmget");
             exit(1);
         }
     }
-    if((shm_buf = (struct all_info*)shmat(shmid,NULL,0)) == (void*)-1)
+    if((all_info = (struct all_info*)shmat(shmid,NULL,0)) == (void*)-1)
     {
-        perror("shmat");
+        DEBUG_ERR("shmat");
         exit(1);
     }
-    return shm_buf;
 }
+
+v
+
 
 

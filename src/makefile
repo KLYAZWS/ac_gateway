@@ -4,4 +4,4 @@ all:
 	make -C udp_client
 	make -C udp_server
 	make -C msg
-
+	make -C analysis

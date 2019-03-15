@@ -15,6 +15,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include "analysis.h"
 
 #define RECV_PAD_PORT   8001
 #define RECV_SLAVE_PORT 2222
@@ -25,7 +26,7 @@
  * @param port 端口号
  * @return int 套接字描述符
  */
-int  udp_server_init(int port)
+static int  udp_server_init(int port)
 {
     struct sockaddr_in sockaddr;
     sockaddr.sin_family = PF_INET;
@@ -35,17 +36,17 @@ int  udp_server_init(int port)
     int udp_server_fd = socket(PF_INET,SOCK_DGRAM,0);
     if(udp_server_fd < 0)
     {
-        perror("udp_server_fd  err!\n");
+        DEBUG_ERR("udp_server_fd  err!\n");
     }
-    printf("udp_server_fd  ok\n");
+    DEBUG_INFO("udp_server_fd  ok\n");
 
     int ret = bind(udp_server_fd,(struct sockaddr*)&sockaddr,sizeof(sockaddr));
 	if(ret < 0)
 	{
-		perror("bind error");
+		DEBUG_ERR("bind error");
 		close(udp_server_fd);
 	}
-	printf("udp server bind ok\n");
+	DEBUG_INFO("udp server bind ok\n");
     return udp_server_fd;
 }
 /**
@@ -58,40 +59,77 @@ void pad_data_deal(int fd)
     int ret = 0;
     char buf[1024] = {0};
     uchar gatewayID[4] = {0};
-
+    pad_data_typedef pad_send_data;
     ret = recvfrom(fd,buf,sizeof(buf),0,NULL,NULL);
     if(ret > 0)
     {
-        printf("server recv ok\n");
+        DEBUG_INFO("server recv ok\n");
     }
     switch (buf[0])
     {
+        /* 心跳包 */
         case ORDER_PAD_HEARTBEAT:
-            gatewayID[0] = (GATEWAY_ID >> 24) & 0xff;/*网关ID*/
+            gatewayID[0] = (GATEWAY_ID >> 24) & 0xff;
 			gatewayID[1] = (GATEWAY_ID >> 16) & 0xff;
 			gatewayID[2] = (GATEWAY_ID >> 8)  & 0xff;
 			gatewayID[3] = (GATEWAY_ID) & 0xff;			
-			if(!memcmp(&buf[1],gatewayID,4))	           //判断网关ID
+			if(!memcmp(&buf[1],gatewayID,4))	        //判断网关ID
 			{
-				memcpy(padSend.classID,&udpData[5],8);         //课程ID
-				padSend.element = udpData[13];				   //单元
-				memcpy(padSend.UTC,&udpData[14],4);			   //UTC
-				db_Set_ElementTime(&padSend); //单元解析
-				DEBUG("PAD send unit%d\r\n",padSend.element);
-				
-				return 4;
+				memcpy(pad_send_data.classID,&buf[5],8);//课程ID
+				pad_send_data.element = buf[13];		//单元
+				memcpy(pad_send_data.UTC,&buf[14],4);	//UTC
+				set_elementTime(&pad_send_data);        //单元解析
+				DEBUG_INFO("PAD send unit%d\r\n",pad_send_data.element);	
+				// return 4;
 			}
 			else
 			{
-				DEBUG("Gateway ID err\r\n");
+				DEBUG_INFO("Gateway ID err\r\n");
 			}
             break;
-    
+        /*PAD课程结束*/
+		case ORDER_PAD_STOP: 
+            /*
+		    onlinenumb = db_Get_onlineDev();
+			for(uint8_t i = 1;i <= onlinenumb;i++)
+			{
+				db_Set_packetLossRate((1-((float)db_Get_fillFlag(i)/(float)LEN_KNEEDATA/(float)timeFlag.packetNum))*1000,i);
+			}    		
+            db_End_Class(&padSend);							
+			DEBUG_INFO("PAD send class end.\r\n");
+			
+			return 5;
+            */			
+			break;
+    	/*PAD绑定命令*/
+		case ORDER_PAD_BINDING:   
+			memcpy((void *)pad_send_data.classID,(void*)&buf[1],13);
+			pad_send_data.node_mark = get_node_mark(&pad_send_data);
+			DEBUG_INFO("pad send binding\r\n");
+			// return 6;	
+			break;
+        /*PAD配置编号*/
+        case ORDER_PAD_CONFIGID:     
+			memcpy(pad_send_data.deviceID,&buf[1],4);
+			DEBUG_INFO("pad send set number\r\n");
+			// return 7;
+			break;
+        /*PAD确认绑定*/
+		case ORDER_PAD_VERIFY_BINGDING:     		
+			if(!memcmp((void *)pad_send_data.classID,(void*)&buf[5],17))//classID和userID和locaFlag和deviceID 均符合
+			{
+				set_bingding(&pad_send_data);
+				DEBUG_INFO("pad verify binding ok\r\n");
+			}
+			else
+			{
+				DEBUG_INFO("verify bingding error!\r\n");
+			}	
+			// return 8;
+			break;
         default:
             break;
     }
-
-
 }
 /**
  * @brief 接收节点数据处理
@@ -107,12 +145,13 @@ void slave_data_deal(int fd)
     ret = recvfrom(fd,buf,sizeof(buf),0,NULL,NULL);
     if(ret > 0)
     {
-        printf("server recv ok\n");
+        DEBUG_INFO("server recv ok\n");
     }
-    printf("recvfrom slave data:%s\n",buf);
+    DEBUG_INFO("recvfrom slave data:%s\n",buf);
 }
+
 /**
- * @brief UDP服务器线程
+ * @brief udp服务器线程
  * 
  * @param arg 
  * @return void* 
@@ -124,7 +163,7 @@ void *udp_server_handler(void *arg)
     int recv_slave_fd;  //接收节点数据
     recv_pad_fd = udp_server_init(RECV_PAD_PORT);
     recv_slave_fd = udp_server_init(RECV_SLAVE_PORT);
-    printf("pad_fd:%d slave_fd:%d\n",recv_pad_fd,recv_slave_fd);
+    DEBUG_INFO("pad_fd:%d slave_fd:%d\n",recv_pad_fd,recv_slave_fd);
 
     /* 多路复用 */
     fd_set rfds;
@@ -137,11 +176,11 @@ void *udp_server_handler(void *arg)
     while(1)
     {
         tmp = rfds;
-        printf("before select...\n");
+        DEBUG_INFO("before select...\n");
         int ret = select(max_fd+1,&tmp,NULL,NULL,NULL);
         if(ret < 0)
         {
-            perror("select error");
+            DEBUG_ERR("select error");
             continue;
         }
         for(i = 0;i <= max_fd;i++)

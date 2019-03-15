@@ -31,12 +31,12 @@ int tcp_client_init(int port)
     int clie_fd = socket(PF_INET,SOCK_STREAM,0);
     if(clie_fd < 0)
     {
-        perror("socket ok!\n");
+        DEBUG_ERR("socket ok!\n");
     }
     int ret = connect(clie_fd,(struct sockaddr*)&sockaddr,sizeof(sockaddr));
     if(ret < 0)
     {
-        perror("connect error");
+        DEBUG_ERR("connect error");
         close(clie_fd);
     }
     return clie_fd;
